@@ -47,7 +47,7 @@ public class WifiHotUtil {
     /**
      * 创建Wifi热点
      */
-    private void createWifiHotspot() {
+    public void createWifiHotspot() {
         if (mWifiManager.isWifiEnabled()) {
             //如果wifi处于打开状态，则关闭wifi,
             mWifiManager.setWifiEnabled(false);
