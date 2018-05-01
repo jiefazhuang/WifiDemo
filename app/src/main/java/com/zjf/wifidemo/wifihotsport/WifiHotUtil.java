@@ -22,6 +22,12 @@ public class WifiHotUtil {
     private String mPassWord = "123456789";//热点密码
     private WifiManager mWifiManager = null;
     private Context mContext = null;
+    private OnWifiHotUtilListener mWifiHotUtilListener = null;
+
+    public void setOnWifiHotUtilListener(OnWifiHotUtilListener wifiHotUtilListener) {
+        this.mWifiHotUtilListener = wifiHotUtilListener;
+    }
+
 
     public WifiHotUtil(Context context) {
         this.mContext = context;
@@ -66,19 +72,30 @@ public class WifiHotUtil {
         config.allowedPairwiseCiphers
                 .set(WifiConfiguration.PairwiseCipher.CCMP);
         config.status = WifiConfiguration.Status.ENABLED;
+        Log.i(TAG,"createWifiHotspot mWifiManager:" + mWifiManager + ";config:" +config);
         //通过反射调用设置热点
         try {
             Method method = mWifiManager.getClass().getMethod(
                     "setWifiApEnabled", WifiConfiguration.class, Boolean.TYPE);
             boolean enable = (Boolean) method.invoke(mWifiManager, config, true);
+            Log.i(TAG,"closeWifiHotspot enable:" + enable);
             if (enable) {
-                Log.i(TAG,"热点已开启 SSID:" + mWifiHostName + " mPassWord:" + mPassWord);
+                if (mWifiHotUtilListener != null) {
+                    mWifiHotUtilListener.onWifiHotChange(true);
+                }
+                Log.i(TAG,"createWifiHotspot 热点已开启 SSID:" + mWifiHostName + " mPassWord:" + mPassWord);
             } else {
-                Log.i(TAG,"创建热点失败");
+                if (mWifiHotUtilListener != null) {
+                    mWifiHotUtilListener.OnWifiHotOpenFail();
+                }
+                Log.i(TAG,"createWifiHotspot 创建热点失败");
             }
         } catch (Exception e) {
             e.printStackTrace();
-            Log.i(TAG,"创建热点失败 e.getMessage():" + e.getMessage());
+            if (mWifiHotUtilListener != null) {
+                mWifiHotUtilListener.OnWifiHotOpenFail();
+            }
+            Log.i(TAG,"createWifiHotspot 创建热点失败 e.getMessage():" + e.getMessage());
         }
     }
 
@@ -101,6 +118,15 @@ public class WifiHotUtil {
         } catch (InvocationTargetException e) {
             e.printStackTrace();
         }
-        Log.i(TAG,"热点关闭");
+        if (mWifiHotUtilListener != null) {
+            mWifiHotUtilListener.onWifiHotChange(false);
+        }
+        Log.i(TAG,"closeWifiHotspot 热点关闭");
     }
+
+    public interface OnWifiHotUtilListener {
+        public void onWifiHotChange(boolean state);//state:true 打开成功；false 关闭热点
+        public void OnWifiHotOpenFail();
+    }
+
 }
